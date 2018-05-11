@@ -164,8 +164,8 @@ static void control_loop(mysocket_t sd, context_t *ctx)
       if (app_bytes == 0)
       {
         free(ctx);
-        // stcp_unblock_application(sd);
-        errno = ECONNREFUSED; // TODO
+        stcp_unblock_application(sd);
+        //errno = ECONNREFUSED; // TODO
 
         return;
       }
@@ -183,8 +183,8 @@ static void control_loop(mysocket_t sd, context_t *ctx)
       if (network_bytes < sizeof(STCPHeader))
       {
         free(ctx);
-        // stcp_unblock_application(sd);
-        errno = ECONNREFUSED; // TODO
+        stcp_unblock_application(sd);
+        //errno = ECONNREFUSED; // TODO
 
         return;
       }
