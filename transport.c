@@ -143,7 +143,8 @@ static void control_loop(mysocket_t sd, context_t *ctx)
   while (!ctx->done)
   {
     unsigned int event;
-    
+    // Olsen Ong
+    // 올센
     /* see stcp_api.h or stcp_api.c for details of this function */
     /* XXX: you will need to change some of these arguments! */
     event = stcp_wait_for_event(sd, 0, NULL);
