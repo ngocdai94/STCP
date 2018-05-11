@@ -26,11 +26,27 @@ const unsigned int MAX_SEQUENCE_NUM = 255;
 const unsigned int WINDOW_SIZE = 3072;
 const unsigned int MSS = 536;
 
+// IS THIS YOUR STUFF, IRWAN????
+
+// Default values
+/* Default data offset when sending packet. A header not using the optional
+   TCP field has a data offset of 5(20bytes), while a header using the max
+  optional field has a data offset of 15(60 bytes).
+ */
+#define STCP_HEADER_LEN 5
+
+// max packet size
+#define STCP_MAX_PKT_SIZE sizeof(STCPHeader) + STCP_MSS; // MSS from .h
+
 enum
 {
   CSTATE_ESTABLISHED,
   SYN_SENT,
-  SYNC_ACK_RECV
+  SYN_RECV,
+  SYNC_ACK_SENT,
+  SYNC_ACK_RECV,
+  FIN_SENT,
+  CSTATE_CLOSED
 }; /* you should have more states */
 
 /* this structure is global to a mysocket descriptor */
@@ -57,6 +73,9 @@ STCPHeader *create_ACK_packet(unsigned int seq, unsigned int ack);
 bool send_SYN(mysocket_t sd, context_t *ctx);
 void wait_for_SYN_ACK(mysocket_t sd, context_t *ctx);
 bool send_ACK(mysocket_t sd, context_t *ctx);
+void wait4_SYN(mysocket_t sd, context_t* ctx);
+bool send_SYNACK(mysocket_t sd, context_t* ctx);
+void wait4_ACK(mysocket_t sd, context_t* ctx);
 
 /* initialise the transport layer, and start the main loop, handling
  * any data from the peer or the application.  this function should not
@@ -92,7 +111,8 @@ void transport_init(mysocket_t sd, bool_t is_active)
       return;
   }
   else
-  { // Server control path, wait for connection
+  {
+    // Server control path, wait for connection
     // THIS IS IRWANN JOBBBB
     // PLEASE DO IT, AND UPDATE YOUR DOCUMENTATION
 
@@ -101,6 +121,24 @@ void transport_init(mysocket_t sd, bool_t is_active)
     //    if (!send_SYN_ACK(sd, ctx)) return;
     //
     //    wait_for_ACK(sd, ctx);
+    
+    
+    // IRWANNNNN
+    
+    // Network -> Transport -> Application
+    
+    // wait for a SYN packet to arrive... from the peer
+    wait4_SYN(sd, ctx);
+    
+    
+    // send SYN-ACK
+    if(!send_SYNACK(sd, ctx))
+      return;
+    //print error?
+    
+    
+    // wait for ACK
+    wait4_ACK(sd, ctx);
   }
   ctx->connection_state = CSTATE_ESTABLISHED;
   stcp_unblock_application(sd);
@@ -350,6 +388,115 @@ bool send_ACK(mysocket_t sd, context_t *ctx)
 
   return status;
 }
+
+void wait4_SYN(mysocket_t sd, context_t* ctx)
+{
+  // create buffer to hold header data
+  char buffer[sizeof(STCPHeader)];
+  
+  // wait for NETWORK_DATA event
+  stcp_wait_for_event(sd, NETWORK_DATA, NULL);
+  
+  ssize_t bytes_recv;
+  if((bytes_recv = stcp_network_recv(sd, buffer, MSS) < sizeof(STCPHeader))
+     {
+       // data not complete. Drop it
+       free(ctx);
+       // error code?
+       // errno = ECONNREFUSED;
+       return;
+     }
+     
+     // Inspect the header in the buffer.
+     STCPHeader* pkt = (STCPHeader*)buffer;
+     
+     if(pkt->th_flags == TH_SYN)
+     {
+       ctx->rec_wind_size = ntohs(pkt->th_win);
+       ctx->rec_seq_num = ntohl(pkt->th_seq);
+       ctx->connection_state = SYN_RECVD;    // double check the enum name
+     }
+     }
+     
+     bool send_SYNACK(mysocket_t sd, context_t* ctx)
+     {
+       bool status = false;
+       
+       // create pkt to send
+       STCPHeader* SYNACK_pkt = (STCPHeader*) malloc(sizeof(STCPHeader));
+       SYNACK_pkt->th_seq = htonl(seq);
+       SYNACK_pkt->th_win = htons(WINDOW_SIZE);
+       SYNACK_pkt->th_off = htons(STCP_HEADER_LEN);
+       SYNACK_pkt->th_ack = htonl(rec_seq_num++);
+       SYNACK_pkt->th_flags = (TH_SYN | TH_ACK);
+       
+       // after complete, update seq_num
+       ctx->seq_num++;
+       
+       // send the SYN-ACK
+       ssize_t bytes_sent;
+       if((bytes_sent = stcp_network_send(sd, SYNACK_pkt,
+                                          sizeof(STCPHeader), NULL)) <= 0)
+       {
+         perror("not sent properly");
+         
+         //refuse connection
+         free(ctx);      // free incorrect memory
+         free(SYNACK_pkt);  // --
+         
+         // unblock
+         stcp_unblock_application(sd);
+         errno = ECONNREFUSED;
+         return false;
+       }
+       else // if sent properly
+       {
+         // update the connection state
+         ctx->connection_state = SYN_ACK_SENT;
+         
+         // release no longer used data
+         free(SYNACK_pkt);
+         
+         // DO WE NEED TO FREE(CTX)?
+         // ARE WE STILL USING IT, THO??
+         
+         return true;
+       }
+       
+     }
+     
+     void wait4_ACK(mysocket_t sd, context_t* ctx)
+     {
+       char buffer[sizeof(STCPHeader)];
+       
+       // blocking event
+       stcp_wait_for_event(sd, NETWORK_DATA, NULL);
+       
+       // recv the header
+       ssize_t bytes_recv;
+       if((bytes_recv = stcp_network_recv(sd, buffer, MSS)) < sizeof(STCPHeader)
+          {
+            // data recvd not complete. Drop it
+            free(ctx);
+            errno = ECONNREFUSED;
+            return;
+          }
+          
+          // Verify header
+          STCPHeader* pkt = (STCPHeader*) buffer;
+          
+          if(pkt->th_flags == TH_ACK)
+          {
+            // update seq#, windowsize, & connection_state
+            ctx->rec_seq_num = ntohl(pkt->th_seq);
+            ctx->rec_wind_size = ntohs(pkt->th_win);
+            
+            // check if state = FIN
+            if(ctx->connection_state == FIN_SENT)
+              ctx->connection_state = CSTATE_CLOSED;
+          }
+          }
+       
 
 /**********************************************************************/
 /* our_dprintf
