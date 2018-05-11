@@ -144,7 +144,7 @@ static void control_loop(mysocket_t sd, context_t *ctx)
   {
     unsigned int event;
     // Olsen Ong
-    // 올센
+    // 올센 ooooo
     /* see stcp_api.h or stcp_api.c for details of this function */
     /* XXX: you will need to change some of these arguments! */
     event = stcp_wait_for_event(sd, 0, NULL);
@@ -154,6 +154,21 @@ static void control_loop(mysocket_t sd, context_t *ctx)
     {
       /* the application has requested that data be sent */
       /* see stcp_app_recv() */
+    }
+
+    if (event & NETWORK_DATA)
+    {
+      
+    }
+
+    if (event & APP_CLOSE_REQUESTED)
+    {
+      
+    }
+
+    if (event & ANY_EVENT)
+    {
+      
     }
     
     /* etc. */
