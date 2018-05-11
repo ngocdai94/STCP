@@ -93,6 +93,8 @@ void transport_init(mysocket_t sd, bool_t is_active)
       return;
     
   } else {  // Server control path, wait for connection
+    // this is Irwan job
+    
 //    wait_for_SYN(sd, ctx);
 //
 //    if (!send_SYN_ACK(sd, ctx)) return;
