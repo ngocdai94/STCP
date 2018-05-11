@@ -125,8 +125,8 @@ static void generate_initial_seq_num(context_t *ctx)
   /*ctx->initial_sequence_num =;*/
   ctx->initial_sequence_num = rand() % MAX_SEQUENCE_NUM + 1;
 #endif
-}
-
+}// irwan was here
+//kkkkkkk
 
 /* control_loop() is the main STCP loop; it repeatedly waits for one of the
  * following to happen:
