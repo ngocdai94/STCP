@@ -93,7 +93,8 @@ void transport_init(mysocket_t sd, bool_t is_active)
       return;
     
   } else {  // Server control path, wait for connection
-    // this is Irwan job
+  // THIS IS IRWANN JOBBBB
+    // PLEASE DO IT, AND UPDATE YOUR DOCUMENTATION
     
 //    wait_for_SYN(sd, ctx);
 //
