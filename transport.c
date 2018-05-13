@@ -117,30 +117,15 @@ void transport_init(mysocket_t sd, bool_t is_active)
   }
   else
   {
-    // Server control path, wait for connection
-    // THIS IS IRWANN JOBBBB
-    // PLEASE DO IT, AND UPDATE YOUR DOCUMENTATION
-
-    //    wait_for_SYN(sd, ctx);
-    //
-    //    if (!send_SYN_ACK(sd, ctx)) return;
-    //
-    //    wait_for_ACK(sd, ctx);
-    
-    
-    // IRWANNNNN
-    
     // Network -> Transport -> Application
     
     // wait for a SYN packet to arrive... from the peer
     wait4_SYN(sd, ctx);
     
-    
     // send SYN-ACK
     if(!send_SYNACK(sd, ctx))
       return;
     //print error?
-    
     
     // wait for ACK
     wait4_ACK(sd, ctx);
