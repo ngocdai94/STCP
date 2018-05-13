@@ -65,10 +65,8 @@ typedef struct
 static void generate_initial_seq_num(context_t *ctx);
 static void control_loop(mysocket_t sd, context_t *ctx);
 
-//NEED TO DOCUMENT
 
-// Dai Part
-
+// ------------------------------- Dai Part ------------------------------- //
 // Create SYN Packet
 // To create a syn packet, TCP header need need to be allocate and need
 // infomation such as sequence number, acknowledgement number, data offset
@@ -81,23 +79,42 @@ STCPHeader *create_SYN_Packet(unsigned int seq, unsigned int ack);
 // Create SYN+ACK Packet
 // Similar to create_SYN_packet, TCP header need need to be allocate and need
 // infomation such as sequence number, acknowledgement number, data offset
-// TH_SYN flag of TCP, and window size
+// and window size. The difference now is TH_SYN & TH_ACK flag of TCP
 //
 // Pre: STCP Header is available
-// Post: STCP Header return an allocated SYN packet
+// Post: STCP Header return an allocated SYN_ACK packet
 STCPHeader *create_SYN_ACK_Packet(unsigned int seq, unsigned int ack);
+
+// Create ACK Packet
+// Similar to create_SYN_packet, TCP header need need to be allocate and need
+// infomation such as sequence number, acknowledgement number, data offset
+// and window size. The difference now is TH_ACK flag of TCP
+//
+// Pre: STCP Header is available
+// Post: STCP Header return an allocated ACK packet
 STCPHeader *create_ACK_Packet(unsigned int seq, unsigned int ack);
 
+// Send SYN packet to remote server
 bool send_SYN(mysocket_t sd, context_t *ctx);
-void wait_for_SYN_ACK(mysocket_t sd, context_t *ctx);
-bool send_ACK(mysocket_t sd, context_t *ctx);
 
-// Irwan Part
+// Wait for SYN+ACK from the remote server
+void wait_for_SYN_ACK(mysocket_t sd, context_t *ctx);
+
+// Send ACK to remote server to complete TCP-HANDSHAKE
+bool send_ACK(mysocket_t sd, context_t *ctx);
+// ---------------------------------- End ---------------------------------- //
+
+// ------------------------------- Irwan Part ------------------------------ //
 void wait4_SYN(mysocket_t sd, context_t* ctx);
 bool send_SYNACK(mysocket_t sd, context_t* ctx);
 void wait4_ACK(mysocket_t sd, context_t* ctx);
+// ---------------------------------- End ---------------------------------- //
 
-// Olsen Part
+// ------------------------------- Olsen Part ------------------------------ //
+/* TODO
+ Include your work here!!
+ */
+// ---------------------------------- End ---------------------------------- //
 
 /* initialise the transport layer, and start the main loop, handling
  * any data from the peer or the application.  this function should not
@@ -301,6 +318,32 @@ STCPHeader *create_SYN_Packet(unsigned int seq, unsigned int ack)
   return SYN_packet;
 }
 
+// Create SYN+ACK Packet
+// Similar to create_SYN_packet, TCP header need need to be allocate and need
+// infomation such as sequence number, acknowledgement number, data offset
+// and window size. The difference now is TH_SYN & TH_ACK flag of TCP
+//
+// Pre: STCP Header is available
+// Post: STCP Header return an allocated SYN_ACK packet
+STCPHeader *create_SYN_ACK_Packet(unsigned int seq, unsigned int ack)
+{
+  STCPHeader* SYN_ACK_packet = (STCPHeader*)malloc(sizeof(STCPHeader));
+  SYN_ACK_packet->th_seq = htonl(seq);
+  SYN_ACK_packet->th_ack = htonl(ack);
+  SYN_ACK_packet->th_off = htons(5);  // header size offset for packed data
+  SYN_ACK_packet->th_flags = (TH_SYN | TH_ACK);  // set packet type to SYN_ACK
+  SYN_ACK_packet->th_win = htons(WINDOW_SIZE);   // default value
+  return SYN_ACK_packet;
+}
+
+
+// Create ACK Packet
+// Similar to create_SYN_packet, TCP header need need to be allocate and need
+// infomation such as sequence number, acknowledgement number, data offset
+// and window size. The difference now is TH_ACK flag of TCP
+//
+// Pre: STCP Header is available
+// Post: STCP Header return an allocated ACK packet
 STCPHeader *create_ACK_Packet(unsigned int seq, unsigned int ack)
 {
   STCPHeader *ACK_packet = (STCPHeader *)malloc(sizeof(STCPHeader));
@@ -312,6 +355,8 @@ STCPHeader *create_ACK_Packet(unsigned int seq, unsigned int ack)
   return ACK_packet;
 }
 
+
+// Send SYN packet to remote server
 bool send_SYN(mysocket_t sd, context_t *ctx)
 {
   bool status;
@@ -342,6 +387,7 @@ bool send_SYN(mysocket_t sd, context_t *ctx)
   return status;
 }
 
+// Wait for SYN+ACK from the remote server
 void wait_for_SYN_ACK(mysocket_t sd, context_t *ctx)
 {
   char buffer[sizeof(STCPHeader)];
@@ -372,6 +418,7 @@ void wait_for_SYN_ACK(mysocket_t sd, context_t *ctx)
   }
 }
 
+// Send ACK to remote server to complete TCP-HANDSHAKE
 bool send_ACK(mysocket_t sd, context_t *ctx)
 {
   // printf("Sending ACK\n");

@@ -13,6 +13,20 @@ References:
 
 DESCRIBE YOUR CODE AND DESIGN DECISIONS HERE
 // Dai
+In order to clients and server talked together, a TCP Handshake must be
+established. As we know that, TCP Handshake takes 1 and 1/2 RTT to create:
+  1) Clients send SYN packet to server
+  2) Sever responds back with SYN+ACK to client
+  3) Clients send ACK packet to server, and the TCP Handshake completed
+
+- send_SYN will call create_SYN_packet function to create SYN packet, then send
+SYN packet to server
+
+- wait_for_SYN_ACK will wait for SYN+ACK packet from server
+
+- send_ACK will call create_ACK_packet function to create ACK packet, then send
+ACK packet to server
+
 STCPHeader *create_SYN_packet(unsigned int seq, unsigned int ack);
 STCPHeader *create_SYN_ACK_packet(unsigned int seq, unsigned int ack);
 STCPHeader *create_ACK_packet(unsigned int seq, unsigned int ack);
