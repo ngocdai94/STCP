@@ -69,10 +69,24 @@ static void control_loop(mysocket_t sd, context_t *ctx);
 
 // Dai Part
 
+// Create SYN Packet
+// To create a syn packet, TCP header need need to be allocate and need
+// infomation such as sequence number, acknowledgement number, data offset
+// TH_SYN flag of TCP, and window size
 //
-STCPHeader *create_SYN_packet(unsigned int seq, unsigned int ack);
-STCPHeader *create_SYN_ACK_packet(unsigned int seq, unsigned int ack);
-STCPHeader *create_ACK_packet(unsigned int seq, unsigned int ack);
+// Pre: STCP Header is available
+// Post: STCP Header return an allocated SYN packet
+STCPHeader *create_SYN_Packet(unsigned int seq, unsigned int ack);
+
+// Create SYN+ACK Packet
+// Similar to create_SYN_packet, TCP header need need to be allocate and need
+// infomation such as sequence number, acknowledgement number, data offset
+// TH_SYN flag of TCP, and window size
+//
+// Pre: STCP Header is available
+// Post: STCP Header return an allocated SYN packet
+STCPHeader *create_SYN_ACK_Packet(unsigned int seq, unsigned int ack);
+STCPHeader *create_ACK_Packet(unsigned int seq, unsigned int ack);
 
 bool send_SYN(mysocket_t sd, context_t *ctx);
 void wait_for_SYN_ACK(mysocket_t sd, context_t *ctx);
@@ -269,7 +283,14 @@ static void control_loop(mysocket_t sd, context_t *ctx)
   }
 }
 
-STCPHeader *create_SYN_packet(unsigned int seq, unsigned int ack)
+// Create SYN Packet
+// To create a syn packet, TCP header need need to be allocate and need
+// infomation such as sequence number, acknowledgement number, data offset
+// TH_SYN flag of TCP, and window size
+//
+// Pre: STCP Header is available
+// Post: STCP Header return an allocated SYN packet
+STCPHeader *create_SYN_Packet(unsigned int seq, unsigned int ack)
 {
   STCPHeader *SYN_packet = (STCPHeader *)malloc(sizeof(STCPHeader));
   SYN_packet->th_seq = htonl(seq);
@@ -280,7 +301,7 @@ STCPHeader *create_SYN_packet(unsigned int seq, unsigned int ack)
   return SYN_packet;
 }
 
-STCPHeader *create_ACK_packet(unsigned int seq, unsigned int ack)
+STCPHeader *create_ACK_Packet(unsigned int seq, unsigned int ack)
 {
   STCPHeader *ACK_packet = (STCPHeader *)malloc(sizeof(STCPHeader));
   ACK_packet->th_seq = htonl(seq);
@@ -296,7 +317,7 @@ bool send_SYN(mysocket_t sd, context_t *ctx)
   bool status;
 
   // Create SYN Packet
-  STCPHeader *SYN_packet = create_SYN_packet(ctx->initial_sequence_num, 0);
+  STCPHeader *SYN_packet = create_SYN_Packet(ctx->initial_sequence_num, 0);
   ctx->initial_sequence_num++;
 
   // Send SYN packet
@@ -358,7 +379,7 @@ bool send_ACK(mysocket_t sd, context_t *ctx)
 
   // Create ACK Packet
   STCPHeader *ACK_packet =
-      create_ACK_packet(ctx->initial_sequence_num, ctx->rec_seq_num + 1);
+      create_ACK_Packet(ctx->initial_sequence_num, ctx->rec_seq_num + 1);
 
   // Send ACK packet
   ssize_t sentBytes =
