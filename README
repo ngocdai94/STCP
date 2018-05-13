@@ -3,4 +3,25 @@
            Name(s): Dai Nguyen, Olsen Ong, Irwan Wiranto
 ================================================
 
+References:
+1. TCP State Diagram:
+  https://en.wikipedia.org/wiki/File:Tcp_state_diagram_fixed.svg
+
+2. RFC 793: Tranmission Control Protocol
+  http://www.ietf.org/rfc/rfc793.txt
+
+
 DESCRIBE YOUR CODE AND DESIGN DECISIONS HERE
+// Dai
+STCPHeader *create_SYN_packet(unsigned int seq, unsigned int ack);
+STCPHeader *create_SYN_ACK_packet(unsigned int seq, unsigned int ack);
+STCPHeader *create_ACK_packet(unsigned int seq, unsigned int ack);
+
+bool send_SYN(mysocket_t sd, context_t *ctx);
+void wait_for_SYN_ACK(mysocket_t sd, context_t *ctx);
+bool send_ACK(mysocket_t sd, context_t *ctx);
+
+// Olsen
+
+// Irwan
+
