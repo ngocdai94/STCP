@@ -28,7 +28,7 @@ const unsigned int MSS = 536;
 
 // IS THIS YOUR STUFF, IRWAN????
 
-// Default values
+// Default values 
 /* Default data offset when sending packet. A header not using the optional
    TCP field has a data offset of 5(20bytes), while a header using the max
   optional field has a data offset of 15(60 bytes).
@@ -468,7 +468,6 @@ bool send_SYNACK(mysocket_t sd, context_t* ctx)
 
 void wait4_ACK(mysocket_t sd, context_t* ctx)
 {
-
   char buffer[sizeof(STCPHeader)];
 
   // blocking event
