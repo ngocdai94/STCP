@@ -1,4 +1,4 @@
-/* Team: Dai Nguyen, Olsen Ong, Irwan
+/* Team: Dai Nguyen, Olsen Ong, Irwan Wiranto
  * transport.c
  *
  * CPSC4510: Project 3 (STCP)
@@ -104,15 +104,17 @@ void wait_for_SYN_ACK(mysocket_t sd, context_t *ctx);
 bool send_ACK(mysocket_t sd, context_t *ctx);
 // ---------------------------------- End ---------------------------------- //
 
+
 // ------------------------------- Irwan Part ------------------------------ //
 void wait4_SYN(mysocket_t sd, context_t* ctx);
 bool send_SYNACK(mysocket_t sd, context_t* ctx);
 void wait4_ACK(mysocket_t sd, context_t* ctx);
 // ---------------------------------- End ---------------------------------- //
 
+
 // ------------------------------- Olsen Part ------------------------------ //
-/* TODO
- Include your work here!!
+/*
+ TODO: Include your work here!!
  */
 // ---------------------------------- End ---------------------------------- //
 
@@ -138,14 +140,14 @@ void transport_init(mysocket_t sd, bool_t is_active)
    */
   if (is_active)
   { // Client control path, initiate connection
-    // Send SYN
+    // send SYN packet to remote server
     if (!send_SYN(sd, ctx))
       return;
 
-    // Wait for SYN-ACK
+    // wait for SYN-ACK packet from remote server
     wait_for_SYN_ACK(sd, ctx);
 
-    // Send ACK Packet
+    // send ACK packet to remote server and complete TCP Handshake
     if (!send_ACK(sd, ctx))
       return;
   }
