@@ -66,14 +66,18 @@ static void generate_initial_seq_num(context_t *ctx);
 static void control_loop(mysocket_t sd, context_t *ctx);
 
 //NEED TO DOCUMENT
+
+// Dai
 STCPHeader *create_SYN_packet(unsigned int seq, unsigned int ack);
 STCPHeader *create_SYN_ACK_packet(unsigned int seq, unsigned int ack);
 STCPHeader *create_ACK_packet(unsigned int seq, unsigned int ack);
 
+// Dai
 bool send_SYN(mysocket_t sd, context_t *ctx);
 void wait_for_SYN_ACK(mysocket_t sd, context_t *ctx);
 bool send_ACK(mysocket_t sd, context_t *ctx);
 
+// Irwan
 void wait4_SYN(mysocket_t sd, context_t* ctx);
 bool send_SYNACK(mysocket_t sd, context_t* ctx);
 void wait4_ACK(mysocket_t sd, context_t* ctx);
