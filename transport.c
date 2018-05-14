@@ -24,7 +24,6 @@
 // NEED TO DOCUMENT
 const unsigned int MAX_SEQUENCE_NUM = 255;
 const unsigned int WINDOW_SIZE = 3072;
-const unsigned int MSS = 536;
 
 // IS THIS YOUR STUFF, IRWAN????
 
@@ -36,7 +35,7 @@ const unsigned int MSS = 536;
 #define STCP_HEADER_LEN 5
 
 // max packet size
-#define STCP_MAX_PKT_SIZE sizeof(STCPHeader) + STCP_MSS; // MSS from .h
+#define STCP_MAX_PKT_SIZE sizeof(STCPHeader) + STCP_MSS; // STCP_MSS from .h
 
 enum
 {
@@ -218,7 +217,7 @@ static void control_loop(mysocket_t sd, context_t *ctx)
     {
       /* the application has requested that data be sent */
       /* see stcp_app_recv() */
-      size_t max_payload_length = (MSS < ctx->rec_wind_size ? MSS : ctx->rec_wind_size) - sizeof(STCPHeader);
+      size_t max_payload_length = (STCP_MSS < ctx->rec_wind_size ? STCP_MSS : ctx->rec_wind_size) - sizeof(STCPHeader);
       char payload[max_payload_length];
       ssize_t app_bytes = stcp_app_recv(sd, payload, max_payload_length);
 
@@ -241,8 +240,8 @@ static void control_loop(mysocket_t sd, context_t *ctx)
     {
       bool isFIN = false;
       bool isDUP = false; // test if packet is a duplicate
-      char payload[MSS];
-      ssize_t network_bytes = stcp_network_recv(sd, payload, MSS);
+      char payload[STCP_MSS];
+      ssize_t network_bytes = stcp_network_recv(sd, payload, STCP_MSS);
 
       if (network_bytes < sizeof(STCPHeader))
       {
@@ -396,7 +395,7 @@ void wait_for_SYN_ACK(mysocket_t sd, context_t *ctx)
 
   unsigned int event = stcp_wait_for_event(sd, NETWORK_DATA, NULL);
 
-  ssize_t receivedBytes = stcp_network_recv(sd, buffer, MSS);
+  ssize_t receivedBytes = stcp_network_recv(sd, buffer, STCP_MSS);
 
   // Verify size of received packet
   if ((unsigned int)receivedBytes < sizeof(STCPHeader))
@@ -461,7 +460,7 @@ void wait4_SYN(mysocket_t sd, context_t* ctx)
   stcp_wait_for_event(sd, NETWORK_DATA, NULL);
   
   ssize_t bytes_recv;
-  if((bytes_recv = stcp_network_recv(sd, buffer, MSS) < sizeof(STCPHeader))
+  if((bytes_recv = stcp_network_recv(sd, buffer, STCP_MSS) < sizeof(STCPHeader))
      {
        // data not complete. Drop it
        free(ctx);
@@ -537,7 +536,7 @@ void wait4_ACK(mysocket_t sd, context_t* ctx)
 
   // recv the header
   ssize_t bytes_recv;
-  if((bytes_recv = stcp_network_recv(sd, buffer, MSS)) < sizeof(STCPHeader)
+  if((bytes_recv = stcp_network_recv(sd, buffer, STCP_MSS)) < sizeof(STCPHeader)
     {
       // data recvd not complete. Drop it
       free(ctx);
