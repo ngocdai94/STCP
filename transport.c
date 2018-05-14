@@ -47,7 +47,9 @@ enum
   CSTATE_CLOSED,
   FIN_1,
   FIN_2,
-  SEND_ACK_THEN_FIN
+  SEND_ACK_THEN_FIN,
+  LAST_ACK,
+  SEND_FIN
 }; /* you should have more states */
 
 /* this structure is global to a mysocket descriptor */
@@ -272,13 +274,13 @@ static void control_loop(mysocket_t sd, context_t *ctx)
         if(ctx->connection_state == FIN_1)
         {
           ctx->connection_state == FIN_2;
-          goto: end;
+          goto end;
         }
         else if(ctx->connection_state == FIN_2)
         {
           ctx->connection_state == CSTATE_CLOSED;
           ctx->done = true;
-          goto: end;
+          goto end;
         }
       }
       
