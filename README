@@ -14,7 +14,7 @@ References:
 DESCRIBE YOUR CODE AND DESIGN DECISIONS HERE
 
 General Decisions:
-  1) We think the good windows size is 3KB = 3072 Bytes
+  1) Windows size is 3KB = 3072 Bytes
   2) Maximum sequence number from Random generator is 254, and minimum is 1
   3) Maximum MSS (Maximum Segment Size) is 536
 
