@@ -3,6 +3,10 @@
            Name(s): Dai Nguyen, Olsen Ong, Irwan Winarto
 ================================================
 
+Weakness:
+Somehow our ./client -f <filename> server:<port> does not display the file
+content
+
 References:
 1. TCP State Diagram:
   https://en.wikipedia.org/wiki/File:Tcp_state_diagram_fixed.svg

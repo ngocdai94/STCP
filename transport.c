@@ -365,11 +365,11 @@ static void control_loop(mysocket_t sd, context_t *ctx)
       }
       else
       {
-        perror("Error. Invalid state with CLOSE request.\n")
+        perror("Error. Invalid state with CLOSE request.\n");
       }
       
       // send FIN PACKET--------
-      if(!send_FIN(sd, ctx))
+      if(!send_FIN_packet(sd, ctx))
       {
         perror("FIN unsuccessfully sent.\n");
       }
