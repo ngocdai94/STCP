@@ -16,7 +16,7 @@ DESCRIBE YOUR CODE AND DESIGN DECISIONS HERE
 General Decisions:
   1) Windows size is 3KB = 3072 Bytes
   2) Maximum sequence number from Random generator is 254, and minimum is 1
-  3) Maximum MSS (Maximum Segment Size) is 536
+  3) STCP_MSS (Maximum Segment Size) had been defined in transport.h is 536
 
 // Dai
 In order to clients and server talked together, a TCP Handshake must be
