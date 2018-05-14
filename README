@@ -36,6 +36,19 @@ void wait_for_SYN_ACK(mysocket_t sd, context_t *ctx);
 bool send_ACK(mysocket_t sd, context_t *ctx);
 
 // Olsen
+- Combined the whole teams parts into one 
+- Fixed errors with variable and function definitions
+- Fixed various errors preventing compilation
+- Control loop implementation
+  Wait for event
+    4 Main types of events: 
+    APP_DATA
+    NETWORK_DATA
+    APP_CLOSE_REQUESTED
+    ANY_EVENT
+  Handles duplicate packets
+  
 
 // Irwan
 
+4 Way Handshake
