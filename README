@@ -56,5 +56,28 @@ bool send_ACK(mysocket_t sd, context_t *ctx);
   
 
 // Irwan
-
-4 Way Handshake
+- Did the other server/passive half of the TCP init.
+	- wait for a SYN packet
+	- send a SYN-ACK packet
+	- wait for an ACK packet
+- 4 Way Handshake
+	- uses state machines
+	- states put inside enum
+ 
+client:						                          server:
+state 1: CONNECTION_ESTABLISHED			
+	- send FIN packet			                  state 1: CONNECTION_ESTABLISHED
+						                                 	- wait for FIN
+                                       state 2: SEND_ACK_THEN_FIN
+                                        - send ACK
+                                        - send FIN
+state 2: FIN_1
+	- wait for ACK	
+state 3: FIN_2
+	- receive FIN
+	- send ACK
+state 4: CSTATE_CLOSE	
+	- close connection
+                                       state 3: CSTATE_CLOSE
+                                        - wait for ACK
+                                        - close connection
