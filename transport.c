@@ -116,14 +116,10 @@ void wait4_ACK(mysocket_t sd, context_t *ctx);
  Include your work here!!
  */
 STCPHeader* create_DATA_packet(unsigned int seq, unsigned int ack, char* payload, size_t payload_length);
-
-bool send_DATA_packet_network(mysocket_t sd, context_t* ctx, char* payload, size_t payload_length);
-void send_DATA_packet_app(mysocket_t sd, context_t* ctx, char* payload, size_t length);
-
-void parse_DATA_packet(context_t* ctx, char* payload, bool& isFIN, bool& isDUP);
-
+bool send_packet_network(mysocket_t sd, context_t* ctx, char* payload, size_t payload_length);
+void send_packet_app(mysocket_t sd, context_t* ctx, char* payload, size_t length);
+void parse_packet(context_t* ctx, char* payload, bool& bFin, bool& bDup);
 STCPHeader* create_FIN_packet(unsigned int seq, unsigned int ack);
-
 bool send_FIN_packet(mysocket_t sd, context_t* ctx);
 
 
@@ -218,13 +214,12 @@ static void control_loop(mysocket_t sd, context_t *ctx)
   while (!ctx->done)
   {
     unsigned int event;
-    // Olsen Ong
-    // 올센 ooooo
+    // Olsen was here
+
     /* see stcp_api.h or stcp_api.c for details of this function */
     /* XXX: you will need to change some of these arguments! */
     event = stcp_wait_for_event(sd, ANY_EVENT, NULL);
 
-    /* check whether it was the network, app, or a close request */
     if (event & APP_DATA)
     {
       /* the application has requested that data be sent */
@@ -233,25 +228,21 @@ static void control_loop(mysocket_t sd, context_t *ctx)
       char payload[max_payload_length];
       ssize_t app_bytes = stcp_app_recv(sd, payload, max_payload_length);
 
-      // printf("App Data Bytes: %d\n", app_bytes);
-      // printf("App Data Payload: %s\n", payload);
-
       if (app_bytes == 0)
       {
         free(ctx);
         stcp_unblock_application(sd);
-        //errno = ECONNREFUSED; // TODO
 
         return;
       }
-      send_DATA_packet_network(sd, ctx, payload, app_bytes);
+      send_packet_network(sd, ctx, payload, app_bytes);
       wait4_ACK(sd, ctx);
     }
 
     if (event & NETWORK_DATA)
     {
-      bool isFIN = false;
-      bool isDUP = false; // test if packet is a duplicate
+      bool bFin = false;
+      bool bDup = false;
       char payload[MSS];
       ssize_t network_bytes = stcp_network_recv(sd, payload, STCP_MSS);
 
@@ -259,24 +250,21 @@ static void control_loop(mysocket_t sd, context_t *ctx)
       {
         free(ctx);
         stcp_unblock_application(sd);
-        //errno = ECONNREFUSED; // TODO
 
         return;
       }
 
-      //printSTCPHeader((STCPHeader *)payload);
-      // printf("Network Data Payload: %s\n", payload + sizeof(STCPHeader));
-      // printf("Network Bytes: %d\n", network_bytes);
-      parse_DATA_packet(ctx, payload, isFIN, isDUP);
 
-      if (isDUP)
+      parse_packet(ctx, payload, bFin, bDup);
+
+      if (bDup)
       {
         send_ACK(sd, ctx);
 
         return;
       }
 
-      if (isFIN)
+      if (bFin)
       {
         send_ACK(sd, ctx);
         stcp_fin_received(sd);
@@ -287,8 +275,7 @@ static void control_loop(mysocket_t sd, context_t *ctx)
 
       if (network_bytes - sizeof(STCPHeader))
       {
-        // printf("isDATA\n");
-        send_DATA_packet_app(sd, ctx, payload, network_bytes);
+        send_packet_app(sd, ctx, payload, network_bytes);
         send_ACK(sd, ctx);
       }
     }
@@ -430,7 +417,6 @@ void wait_for_SYN_ACK(mysocket_t sd, context_t *ctx)
 // Send ACK to remote server to complete TCP-HANDSHAKE
 bool send_ACK(mysocket_t sd, context_t *ctx)
 {
-  // printf("Sending ACK\n");
   bool status;
 
   // Create ACK Packet
@@ -566,7 +552,7 @@ void wait4_ACK(mysocket_t sd, context_t *ctx)
     }
 }
 
-void send_DATA_packet_app(mysocket_t sd, context_t *ctx, char *payload, size_t length)
+void send_packet_app(mysocket_t sd, context_t *ctx, char *payload, size_t length)
 {
 
   // Send DATA packet
@@ -574,7 +560,7 @@ void send_DATA_packet_app(mysocket_t sd, context_t *ctx, char *payload, size_t l
   stcp_app_send(sd, payload + sizeof(STCPHeader), length - sizeof(STCPHeader));
 }
 
-void parse_DATA_packet(context_t *ctx, char *payload, bool &isFIN, bool &isDUP)
+void parse_packet(context_t *ctx, char *payload, bool &bFin, bool &bDup)
 {
 
   STCPHeader *payloadHeader = (STCPHeader *)payload;
@@ -583,28 +569,19 @@ void parse_DATA_packet(context_t *ctx, char *payload, bool &isFIN, bool &isDUP)
 
   ctx->rec_wind_size = ntohs(payloadHeader->th_win);
 
-  isFIN = payloadHeader->th_flags == TH_FIN;
+  bFin = payloadHeader->th_flags == TH_FIN;
 }
 
 STCPHeader *create_DATA_packet(unsigned int seq, unsigned int ack, char *payload, size_t payload_length)
 {
-
-  // printf("Create DATA Packet Payload: %s\n", payload);
-
   unsigned int DATA_packet_size = sizeof(STCPHeader) + payload_length;
-
-  // printf("DATA Packet Payload Size: %d\n", DATA_packet_size);
 
   STCPHeader *DATA_packet = (STCPHeader *)malloc(DATA_packet_size);
 
   DATA_packet->th_seq = htonl(seq);
-
   DATA_packet->th_ack = htonl(ack);
-
   DATA_packet->th_flags = NETWORK_DATA;
-
   DATA_packet->th_win = htons(WINDOW_SIZE);
-
   DATA_packet->th_off = htons(5);
 
   memcpy((char *)DATA_packet + sizeof(STCPHeader), payload, payload_length);
@@ -612,21 +589,17 @@ STCPHeader *create_DATA_packet(unsigned int seq, unsigned int ack, char *payload
   return DATA_packet;
 }
 
-bool send_DATA_packet_network(mysocket_t sd, context_t *ctx, char *payload, size_t payload_length)
+bool send_packet_network(mysocket_t sd, context_t *ctx, char *payload, size_t payload_length)
 {
 
   STCPHeader *DATA_packet = create_DATA_packet(ctx->snd_seq_num, ctx->rec_seq_num + 1, payload, payload_length);
-  //printSTCPHeader(DATA_packet);
+
   ctx->snd_seq_num += payload_length;
 
-  // Send DATA packet
-
   ssize_t sentBytes = stcp_network_send(sd, DATA_packet, sizeof(STCPHeader) + payload_length, NULL);
-  // printf("Network Sent Bytes: %d\n", sentBytes);
 
   if (sentBytes > 0)
-  { // If SYN_ACK packet suucessfully sent
-
+  { 
     free(DATA_packet);
     return true;
   }
@@ -635,8 +608,8 @@ bool send_DATA_packet_network(mysocket_t sd, context_t *ctx, char *payload, size
 
     free(DATA_packet);
     free(ctx);
-    // stcp_unblock_application(sd);
-    errno = ECONNREFUSED; // TODO
+    stcp_unblock_application(sd);
+    errno = ECONNREFUSED;
 
     return false;
   }
@@ -648,16 +621,11 @@ bool send_FIN_packet(mysocket_t sd, context_t* ctx) {
 
   ctx->snd_seq_num++;
 
-  // Send FIN packet
-
   ssize_t sentBytes = stcp_network_send(sd, FIN_packet, sizeof(STCPHeader), NULL);
 
-  // Verify sending of FIN packet
 
-  if (sentBytes > 0) {  // If FIN packet suucessfully sent
-
+  if (sentBytes > 0) {  
     ctx->connection_state = FIN_SENT;
-
     wait4_ACK(sd, ctx);
 
     free(FIN_packet);
@@ -665,14 +633,13 @@ bool send_FIN_packet(mysocket_t sd, context_t* ctx) {
     return true;
 
   } else {
-
     free(FIN_packet);
 
     free(ctx);
 
-    // stcp_unblock_application(sd);
+    stcp_unblock_application(sd);
 
-    errno = ECONNREFUSED;  // TODO
+    errno = ECONNREFUSED;
 
     return false;
 
@@ -685,13 +652,9 @@ STCPHeader* create_FIN_packet(unsigned int seq, unsigned int ack) {
   STCPHeader* FIN_packet = (STCPHeader*)malloc(sizeof(STCPHeader));
 
   FIN_packet->th_seq = htonl(seq);
-
   FIN_packet->th_ack = htonl(ack);
-
   FIN_packet->th_flags = TH_FIN;
-
   FIN_packet->th_win = htons(WINDOW_SIZE);
-
   FIN_packet->th_off = htons(5);
 
   return FIN_packet;
