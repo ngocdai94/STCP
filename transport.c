@@ -44,7 +44,10 @@ enum
   SYN_ACK_SENT,
   SYN_ACK_RECV,
   FIN_SENT,
-  CSTATE_CLOSED
+  CSTATE_CLOSED,
+  FIN_1,
+  FIN_2,
+  SEND_ACK_THEN_FIN
 }; /* you should have more states */
 
 /* this structure is global to a mysocket descriptor */
@@ -107,6 +110,7 @@ bool send_ACK(mysocket_t sd, context_t *ctx);
 void wait4_SYN(mysocket_t sd, context_t *ctx);
 bool send_SYNACK(mysocket_t sd, context_t *ctx);
 void wait4_ACK(mysocket_t sd, context_t *ctx);
+// four-way handshake in control loop. for closing.
 // ---------------------------------- End ---------------------------------- //
 
 // ------------------------------- Olsen Part ------------------------------ //
@@ -261,20 +265,21 @@ static void control_loop(mysocket_t sd, context_t *ctx)
       char payload[STCP_MSS];
       ssize_t network_bytes = stcp_network_recv(sd, payload, STCP_MSS);
       
-      if(ctx->th_flags & th_ack)
+      // Check for closing states
+      STCPHeader* hdr = (STCPHeader*) payload;
+      if(hdr->th_flags & TH_ACK)
       {
         if(ctx->connection_state == FIN_1)
         {
-          connection_state == FIN_2;
-          break;
+          ctx->connection_state == FIN_2;
+          goto: end;
         }
         else if(ctx->connection_state == FIN_2)
         {
-          connection_state == CSTATE_CLOSED;
+          ctx->connection_state == CSTATE_CLOSED;
           ctx->done = true;
-          break;
+          goto: end;
         }
-        goto: end
       }
       
       if (network_bytes < sizeof(STCPHeader))
@@ -299,15 +304,8 @@ static void control_loop(mysocket_t sd, context_t *ctx)
       
       if (isFIN)
       {
-        /*
-         send_ACK(sd, ctx);
-         stcp_fin_received(sd);
-         ctx->connection_state = CSTATE_CLOSED;
-         */
-        
         // Need to send ACK if FIN is received and notify app.
         // We just need to send FIN flag.
-        ctx->snd_nak++;
         ctx->rec_seq_num++;
         
         // tell the app
@@ -319,15 +317,10 @@ static void control_loop(mysocket_t sd, context_t *ctx)
           ctx->connection_state = SEND_ACK_THEN_FIN;
           break;
         }
-        /*else if(ctx->connection_state == FIN_1)
-         {
-         ctx->connection_state = STATE_CLOSING;
-         break;
-         }*/
         else if(ctx->connection_state == FIN_2)
         {
           dprintf("Connection closed.\n");
-          ctx->connection_state = STATE_CLOSED;
+          ctx->connection_state = CSTATE_CLOSED;
           ctx->done = true;
           break;
         }
@@ -335,7 +328,7 @@ static void control_loop(mysocket_t sd, context_t *ctx)
         {
           perror("Error. Invalid state with FIN.\n");
         }
-        
+        send_ACK(sd, ctx);
         return;
       }
       
@@ -350,7 +343,7 @@ static void control_loop(mysocket_t sd, context_t *ctx)
           goto last_FIN;
         }
       }
-    end:
+    
     }
     
     if (event & APP_CLOSE_REQUESTED)
@@ -382,6 +375,7 @@ static void control_loop(mysocket_t sd, context_t *ctx)
       printf("connection_state: %d\n", ctx->connection_state);
     }
     
+    end:
     if (event & ANY_EVENT)
     {
     }
