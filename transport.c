@@ -46,7 +46,12 @@ enum
   SYN_ACK_SENT,
   SYN_ACK_RECV,
   FIN_SENT,
-  CSTATE_CLOSED
+  CSTATE_CLOSED,
+  FIN_1,
+  FIN_2,
+  SEND_ACK_THEN_FIN,
+  STATE_CLOSED,
+  LAST_ACK
 }; /* you should have more states */
 
 /* this structure is global to a mysocket descriptor */
@@ -246,6 +251,27 @@ static void control_loop(mysocket_t sd, context_t *ctx)
       char payload[MSS];
       ssize_t network_bytes = stcp_network_recv(sd, payload, STCP_MSS);
 
+      
+      // WANN edits..
+      // for closing with 4-way handshake
+      STCPHeader* header = (STCPHeader*) payload;
+      if(header->th_flags & TH_ACK)
+      {
+        if((ctx->connection_state) == FIN_1)
+        {
+          ctx->connection_state == FIN_2;
+          break;
+        }
+        else if((ctx->connection_state) == FIN_2)
+        {
+          ctx->connection_state == CSTATE_CLOSED;
+          ctx->done = true;
+          break;
+        }
+        goto end;
+      }
+
+
       if (network_bytes < sizeof(STCPHeader))
       {
         free(ctx);
@@ -266,9 +292,41 @@ static void control_loop(mysocket_t sd, context_t *ctx)
 
       if (bFin)
       {
-        send_ACK(sd, ctx);
+        /*send_ACK(sd, ctx);
         stcp_fin_received(sd);
-        ctx->connection_state = CSTATE_CLOSED;
+        ctx->connection_state = CSTATE_CLOSED;*/
+
+
+        // Wann edits. For 4-way handshake-------------
+        // need to send ACK if FIN is received and notify app. We just need to send FIN flag.
+        //ctx->snd_nak++;
+        ctx->rec_seq_num++;
+
+        // tell the app
+        stcp_fin_received(sd);
+
+        // change states
+        if(ctx->connection_state == CSTATE_ESTABLISHED)
+        {
+          ctx->connection_state = SEND_ACK_THEN_FIN;
+          break;
+        }
+        /*else if(ctx->connection_state == FIN_1)
+        {
+          ctx->connection_state = STATE_CLOSING;
+          break;
+        }*/
+        else if(ctx->connection_state == FIN_2)
+        {
+          dprintf("Connection closed.\n");
+          ctx->connection_state = STATE_CLOSED;
+          ctx->done = true;
+          break;
+        }
+        else
+        {
+          perror("Error. Invalid state with FIN.\n");
+        }
 
         return;
       }
@@ -277,19 +335,52 @@ static void control_loop(mysocket_t sd, context_t *ctx)
       {
         send_packet_app(sd, ctx, payload, network_bytes);
         send_ACK(sd, ctx);
+
+        // last_FIN state
+        if(ctx->connection_state == SEND_ACK_THEN_FIN)
+        {
+          goto last_FIN;
+        }
       }
     }
 
+    // Wann edit.. Changed app closing to use 4-way handshake.
     if (event & APP_CLOSE_REQUESTED)
     {
-      if (ctx->connection_state == CSTATE_ESTABLISHED)
+      /*if (ctx->connection_state == CSTATE_ESTABLISHED)
       {
         send_FIN_packet(sd, ctx);
+      }*/
+
+
+      last_FIN:
+      // check if there is a connection. If yes, break it...
+      if (ctx->connection_state == CSTATE_ESTABLISHED)
+      {
+        // change to FIN_1
+        ctx->connection_state = FIN_1;
+        break;
+      }
+      else if (ctx->connection_state == SEND_ACK_THEN_FIN)
+      {
+        ctx->connection_state = LAST_ACK;
+        break;
+      }
+      else
+      {
+        perror("Error. Invalid state with CLOSE request.\n");
+      }
+
+      // send FIN PACKET--------
+      if(!send_FIN_packet(sd, ctx))
+      {
+        perror("FIN unsuccessfully sent.\n");
       }
 
       printf("connection_state: %d\n", ctx->connection_state);
     }
 
+    end:
     if (event & ANY_EVENT)
     {
     }
