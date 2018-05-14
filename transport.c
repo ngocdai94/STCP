@@ -25,7 +25,7 @@
 const static unsigned int MAX_SEQUENCE_NUM = 255;
 const static unsigned int WINDOW_SIZE = 3072;
 
-// Default values  
+// Default values
 /* Default data offset when sending packet. A header not using the optional
  TCP field has a data offset of 5(20bytes), while a header using the max
  optional field has a data offset of 15(60 bytes).
@@ -345,7 +345,7 @@ static void control_loop(mysocket_t sd, context_t *ctx)
           goto last_FIN;
         }
       }
-    
+      
     }
     
     if (event & APP_CLOSE_REQUESTED)
@@ -377,7 +377,7 @@ static void control_loop(mysocket_t sd, context_t *ctx)
       printf("connection_state: %d\n", ctx->connection_state);
     }
     
-    end:
+  end:
     if (event & ANY_EVENT)
     {
     }
