@@ -67,6 +67,7 @@ bool send_ACK(mysocket_t sd, context_t *ctx);
 - 4 Way Handshake
 	- uses state machines
 	- states put inside enum
+	- note: might need to look through other code to make sure no other parts of code tampers with the states
  
 client:					server:
 state 1: CONNECTION_ESTABLISHED			
