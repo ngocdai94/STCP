@@ -64,10 +64,10 @@ bool send_ACK(mysocket_t sd, context_t *ctx);
 	- uses state machines
 	- states put inside enum
  
-client:						                          server:
+client:					server:
 state 1: CONNECTION_ESTABLISHED			
-	- send FIN packet			                  state 1: CONNECTION_ESTABLISHED
-						                                 	- wait for FIN
+	- send FIN packet		state 1: CONNECTION_ESTABLISHED
+					- wait for FIN
                                        state 2: SEND_ACK_THEN_FIN
                                         - send ACK
                                         - send FIN
